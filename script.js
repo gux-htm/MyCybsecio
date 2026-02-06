@@ -188,26 +188,6 @@ function renderPortfolio() {
         let skillsHtml = '';
         PORTFOLIO_DATA.skills.forEach(s => {
             const blocks = Math.floor(s.value / 5);
-
-            const wrapper = document.createElement('div');
-            wrapper.className = "space-y-2";
-
-            const header = document.createElement('div');
-            header.className = "flex justify-between text-[10px] font-black tracking-widest uppercase";
-
-            const nameSpan = document.createElement('span');
-            nameSpan.textContent = s.name;
-
-            const valueSpan = document.createElement('span');
-            valueSpan.className = "opacity-40";
-            valueSpan.textContent = `${s.value}%`;
-
-            header.appendChild(nameSpan);
-            header.appendChild(valueSpan);
-
-            const blocksContainer = document.createElement('div');
-            blocksContainer.className = "flex gap-1 overflow-hidden";
-
             let blocksHtml = '';
             for(let i=0; i<20; i++) {
                 blocksHtml += `<div class="h-4 w-2 sm:w-3 skew-x-[-20deg] ${i < blocks ? 'bg-cyber-yellow' : 'bg-cyber-yellow/10'}"></div>`;
@@ -220,10 +200,6 @@ function renderPortfolio() {
                     </div>
                     <div class="flex gap-1 overflow-hidden">${blocksHtml}</div>
                 </div>`;
-
-            wrapper.appendChild(header);
-            wrapper.appendChild(blocksContainer);
-            skillList.appendChild(wrapper);
         });
         skillList.innerHTML = skillsHtml;
     }
@@ -244,37 +220,6 @@ function renderPortfolio() {
                     </div>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="opacity-30 group-hover:opacity-100"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="m15 3 6 6"/><path d="M10 14 21 3"/></svg>
                 </div>`;
-            const row = document.createElement('div');
-            row.className = "py-4 flex justify-between items-center group cursor-pointer hover:bg-cyber-yellow/5 px-2 transition-all";
-
-            const leftDiv = document.createElement('div');
-            leftDiv.className = "flex items-center gap-4";
-
-            const iconContainer = document.createElement('div');
-            iconContainer.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF0" stroke-width="2"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M8.21 13.89 7 23l5-3 5 3-1.21-9.12"/><path d="M15 7a6 6 0 1 0-12 0 6 6 0 0 0 12 0Z"/></svg>`;
-            leftDiv.appendChild(iconContainer.firstElementChild);
-
-            const infoDiv = document.createElement('div');
-
-            const titleDiv = document.createElement('div');
-            titleDiv.className = "text-[11px] font-black uppercase text-white";
-            titleDiv.textContent = c.title;
-
-            const issuerDiv = document.createElement('div');
-            issuerDiv.className = "text-[9px] font-mono opacity-40 uppercase";
-            issuerDiv.textContent = `${c.issuer} // ${c.year}`;
-
-            infoDiv.appendChild(titleDiv);
-            infoDiv.appendChild(issuerDiv);
-            leftDiv.appendChild(infoDiv);
-
-            const arrowContainer = document.createElement('div');
-            arrowContainer.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="opacity-30 group-hover:opacity-100"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="m15 3 6 6"/><path d="M10 14 21 3"/></svg>`;
-
-            row.appendChild(leftDiv);
-            row.appendChild(arrowContainer.firstElementChild);
-
-            certsList.appendChild(row);
         });
         certsList.innerHTML = certsHtml;
     }
@@ -294,47 +239,6 @@ function renderPortfolio() {
                     <p class="text-[10px] font-mono text-cyber-yellow/60 uppercase mb-4">${p.desc}</p>
                     <div class="text-[9px] border border-cyber-yellow/40 px-2 py-1 font-bold inline-block">${p.tech}</div>
                 </div>`;
-            const card = document.createElement('div');
-            card.className = "tactical-frame group";
-
-            // Corners
-            const corners = ['tl', 'tr', 'bl', 'br'];
-            corners.forEach(c => {
-                const corner = document.createElement('div');
-                corner.className = `${c} corner`;
-                card.appendChild(corner);
-            });
-
-            // Image Container
-            const imgContainer = document.createElement('div');
-            imgContainer.className = "aspect-video relative overflow-hidden mb-4 border border-cyber-yellow/20";
-
-            const img = document.createElement('img');
-            img.src = p.img;
-            img.className = "w-full h-full object-cover grayscale brightness-50 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700";
-            imgContainer.appendChild(img);
-
-            card.appendChild(imgContainer);
-
-            // Title
-            const h3 = document.createElement('h3');
-            h3.className = "text-md font-black uppercase text-white mb-2";
-            h3.textContent = p.title;
-            card.appendChild(h3);
-
-            // Desc
-            const pDesc = document.createElement('p');
-            pDesc.className = "text-[10px] font-mono text-cyber-yellow/60 uppercase mb-4";
-            pDesc.textContent = p.desc;
-            card.appendChild(pDesc);
-
-            // Tech
-            const techDiv = document.createElement('div');
-            techDiv.className = "text-[9px] border border-cyber-yellow/40 px-2 py-1 font-bold inline-block";
-            techDiv.textContent = p.tech;
-            card.appendChild(techDiv);
-
-            projectsList.appendChild(card);
         });
         projectsList.innerHTML = projectsHtml;
     }
