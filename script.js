@@ -208,10 +208,9 @@ function renderPortfolio() {
             const blocksContainer = document.createElement('div');
             blocksContainer.className = "flex gap-1 overflow-hidden";
 
+            let blocksHtml = '';
             for(let i=0; i<20; i++) {
-                const block = document.createElement('div');
-                block.className = `h-4 w-2 sm:w-3 skew-x-[-20deg] ${i < blocks ? 'bg-cyber-yellow' : 'bg-cyber-yellow/10'}`;
-                blocksContainer.appendChild(block);
+                blocksHtml += `<div class="h-4 w-2 sm:w-3 skew-x-[-20deg] ${i < blocks ? 'bg-cyber-yellow' : 'bg-cyber-yellow/10'}"></div>`;
             }
             skillsHtml += `
                 <div class="space-y-2">
@@ -235,7 +234,7 @@ function renderPortfolio() {
         let certsHtml = '';
         PORTFOLIO_DATA.certs.forEach(c => {
             certsHtml += `
-                <div class="py-4 flex justify-between items-center group cursor-pointer hover:bg-cyber-yellow/5 px-2 transition-all">
+                <div class="py-4 flex justify-between items-center group hover:bg-cyber-yellow/5 px-2 transition-all">
                     <div class="flex items-center gap-4">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF0" stroke-width="2"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M8.21 13.89 7 23l5-3 5 3-1.21-9.12"/><path d="M15 7a6 6 0 1 0-12 0 6 6 0 0 0 12 0Z"/></svg>
                         <div>
@@ -289,7 +288,7 @@ function renderPortfolio() {
                 <div class="tactical-frame group">
                     <div class="tl corner"></div><div class="tr corner"></div><div class="bl corner"></div><div class="br corner"></div>
                     <div class="aspect-video relative overflow-hidden mb-4 border border-cyber-yellow/20">
-                        <img src="${p.img}" class="w-full h-full object-cover grayscale brightness-50 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700">
+                        <img src="${p.img}" alt="${p.title} - ${p.desc}" class="w-full h-full object-cover grayscale brightness-50 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700">
                     </div>
                     <h3 class="text-md font-black uppercase text-white mb-2">${p.title}</h3>
                     <p class="text-[10px] font-mono text-cyber-yellow/60 uppercase mb-4">${p.desc}</p>
@@ -347,4 +346,15 @@ window.addEventListener('DOMContentLoaded', () => {
     new PixelEngine();
     renderPortfolio();
     startBootSequence();
+
+    // Event Listeners
+    const initBtn = document.getElementById('init-session-btn');
+    if (initBtn) {
+        initBtn.addEventListener('click', () => {
+            const operations = document.getElementById('active-operations');
+            if (operations) {
+                operations.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    }
 });
