@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SEC_OPERATOR // KERNEL_BYPASS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              cyber: {
+                black: '#050505',
+                dark: '#080808',
+                yellow: '#FFFF00',
+                dim: 'rgba(255, 255, 0, 0.15)',
+                red: '#FF003C',
+              }
+            },
+            fontFamily: {
+              mono: ['"JetBrains Mono"', 'monospace'],
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        background-color: #050505;
+        color: #FFFF00;
+        font-family: 'JetBrains Mono', monospace;
+        overflow-x: hidden;
+      }
+
+      /* CRT Effects */
+      .crt::before {
+        content: " ";
+        display: block;
+        position: fixed;
+        top: 0; left: 0; bottom: 0; right: 0;
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+        z-index: 9999;
+        background-size: 100% 2px, 3px 100%;
+        pointer-events: none;
+      }
+
+      .crt-vignette {
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(circle, transparent 50%, rgba(0,0,0,0.5) 150%);
+        pointer-events: none;
+        z-index: 9998;
+      }
+
+      .glow-text { text-shadow: 0 0 8px rgba(255, 255, 0, 0.6); }
+      .glow-text-intense { text-shadow: 0 0 15px rgba(255, 255, 0, 0.9); }
+      .glow-border { box-shadow: 0 0 15px rgba(255, 255, 0, 0.15), inset 0 0 5px rgba(255, 255, 0, 0.1); }
+      
+      .scanline-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to bottom, transparent, rgba(255,255,0,0.05) 50%, transparent);
+        height: 200%;
+        animation: scanline-scroll 8s linear infinite;
+        pointer-events: none;
+      }
+
+      @keyframes scanline-scroll {
+        0% { transform: translateY(-50%); }
+        100% { transform: translateY(0%); }
+      }
+
+      @keyframes loading {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+      }
+
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: #050505; }
+      ::-webkit-scrollbar-thumb { background: #FFFF00; }
+
+      .tactical-frame {
+        position: relative;
+        border: 2px solid #FFFF00;
+        padding: 1.5rem;
+        background: rgba(5, 5, 5, 0.85);
+        backdrop-filter: blur(12px);
+        transition: all 0.3s ease;
+      }
+
+      .corner {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        border-color: #FFFF00;
+      }
+      .tl { top: -2px; left: -2px; border-top: 2px solid; border-left: 2px solid; }
+      .tr { top: -2px; right: -2px; border-top: 2px solid; border-right: 2px solid; }
+      .bl { bottom: -2px; left: -2px; border-bottom: 2px solid; border-left: 2px solid; }
+      .br { bottom: -2px; right: -2px; border-bottom: 2px solid; border-right: 2px solid; }
+
+      .hidden-content { opacity: 0; transform: translateY(20px); transition: all 0.8s ease; }
+      .visible-content { opacity: 1; transform: translateY(0); }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.4",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0"
+  }
+}
+</script>
+</head>
+<body class="crt">
+    <div class="crt-vignette"></div>
+
+    <!-- BOOT SCREEN -->
+    <div id="boot-screen" class="fixed inset-0 bg-cyber-black z-[9999] p-6 md:p-12 font-mono flex flex-col items-center justify-center">
+        <div class="w-full max-w-xl space-y-4">
+            <div class="text-cyber-yellow font-black text-2xl tracking-[0.5em] glow-text-intense mb-8 text-center animate-pulse">
+                INITIALIZING_CIPHER.OS
+            </div>
+            <div id="boot-logs" class="space-y-2 h-40 overflow-hidden text-xs"></div>
+            <div class="h-1 w-full bg-cyber-yellow/10 mt-8 overflow-hidden relative">
+                <div class="absolute inset-0 bg-cyber-yellow" style="animation: loading 2s infinite;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD -->
+    <div id="main-app" class="min-h-screen p-4 md:p-10 space-y-10 max-w-screen-2xl mx-auto relative hidden-content">
+        <canvas id="matrix-canvas" class="fixed inset-0 -z-10 opacity-15 pointer-events-none"></canvas>
+        <canvas id="pixel-canvas" class="fixed inset-0 -z-10 opacity-40 pointer-events-none"></canvas>
+
+        <!-- HUD NAV -->
+        <nav class="flex flex-col md:flex-row gap-4 items-center justify-between sticky top-0 z-50 bg-cyber-black/90 p-4 border-b-2 border-cyber-yellow/20 backdrop-blur-xl">
+            <div class="flex items-center gap-6">
+                <div class="w-10 h-10 border-2 border-cyber-yellow flex items-center justify-center glow-border">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m12 8 4 4-4 4M8 12h8"/></svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-black tracking-[0.2em] glow-text">CIPHER.OS</h1>
+                    <div class="text-[9px] font-mono text-cyber-yellow/50">STABLE_BUILD_V5.2.0</div>
+                </div>
+            </div>
+            <div class="flex items-center gap-8 font-mono text-xs">
+                <div class="border-l-2 border-cyber-yellow/40 pl-3">
+                    <div class="text-[8px] text-cyber-yellow/40 uppercase tracking-widest">SYSTEM_CLOCK</div>
+                    <div id="clock" class="text-xs font-bold text-cyber-yellow">00:00:00</div>
+                </div>
+                <div class="hidden sm:block border-l-2 border-cyber-yellow/40 pl-3">
+                    <div class="text-[8px] text-cyber-yellow/40 uppercase tracking-widest">NET_STATUS</div>
+                    <div class="text-xs font-bold text-green-500 animate-pulse">ENCRYPTED</div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- HERO SECTION -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-8 tactical-frame min-h-[400px] flex flex-col justify-center">
+                <div class="tl corner"></div><div class="tr corner"></div><div class="bl corner"></div><div class="br corner"></div>
+                <div class="scanline-overlay"></div>
+                <div class="space-y-6 relative z-10">
+                    <div class="inline-block bg-cyber-yellow text-black px-4 py-1 text-xs font-black uppercase tracking-widest">LEVEL_0_SECURITY_ACCESS</div>
+                    <h2 class="text-5xl md:text-7xl lg:text-8xl font-black uppercase tracking-tighter leading-[0.9] glow-text-intense">
+                        BREACH THE<br /><span class="text-white">IMPOSSIBLE.</span><br />CODE THE FUTURE.
+                    </h2>
+                    <p id="hero-desc" class="text-sm md:text-lg font-mono text-cyber-yellow/80 max-w-2xl leading-relaxed uppercase border-l-4 border-cyber-yellow pl-6"></p>
+                    <div class="flex flex-wrap gap-4 pt-4">
+                        <button class="bg-cyber-yellow text-black px-10 py-4 font-black uppercase text-sm hover:bg-white transition-all glow-border">INITIATE_SESSION</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TRYHACKME BADGE -->
+            <div class="lg:col-span-4 tactical-frame flex flex-col items-center justify-between p-4">
+                <div class="tl corner"></div><div class="tr corner"></div><div class="bl corner"></div><div class="br corner"></div>
+                <h3 class="text-[10px] font-black uppercase tracking-widest opacity-60 w-full text-left mb-4">THM_INTEL_FEED</h3>
+                <div class="relative w-full overflow-hidden flex justify-center items-center h-[180px] bg-white/5 border border-cyber-yellow/10 rounded">
+                    <div class="origin-center transform scale-[0.7] md:scale-100 w-[600px] h-[300px] pointer-events-none">
+                        <iframe src="https://tryhackme.com/api/v2/badges/public-profile?userPublicId=4636470" style="border: none; width: 100%; height: 100%; mix-blend-mode: screen;" scrolling="no"></iframe>
+                    </div>
+                </div>
+                <div class="w-full mt-4 flex justify-between text-[10px] font-bold border-t border-cyber-yellow/20 pt-2">
+                    <span>OPERATOR_ID: 4636470</span>
+                    <span class="text-green-500">UPLINK_STABLE</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- SKILLS & CERTS GRID -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="tactical-frame">
+                <div class="tl corner"></div><div class="tr corner"></div><div class="bl corner"></div><div class="br corner"></div>
+                <h3 class="text-xs font-black uppercase tracking-widest mb-8 opacity-60">SKILL_LOADOUT</h3>
+                <div id="skills-list" class="space-y-6"></div>
+            </div>
+            <div class="tactical-frame">
+                <div class="tl corner"></div><div class="tr corner"></div><div class="bl corner"></div><div class="br corner"></div>
+                <h3 class="text-xs font-black uppercase tracking-widest mb-8 opacity-60">VERIFIED_CREDENTIALS</h3>
+                <div id="certs-list" class="divide-y divide-cyber-yellow/10"></div>
+            </div>
+        </div>
+
+        <!-- PROJECTS -->
+        <div class="space-y-8">
+            <h2 class="text-3xl font-black uppercase tracking-[0.3em] glow-text text-center">ACTIVE_OPERATIONS</h2>
+            <div id="projects-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+        </div>
+
+        <footer class="pt-20 pb-10 border-t border-cyber-yellow/10 text-center">
+            <p class="text-xs font-mono opacity-40">© 2025 CIPHER.OS // ALL SYSTEMS OPERATIONAL</p>
+        </footer>
+    </div>
+
+    <script type="module" src="index.tsx"></script>
+</body>
+</html>

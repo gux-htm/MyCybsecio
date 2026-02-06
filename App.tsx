@@ -1,0 +1,1 @@
+// Redundant file removed in favor of index.tsx Vanilla implementation.
