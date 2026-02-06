@@ -3,31 +3,13 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://images.unsplash.com; frame-src https://tryhackme.com; object-src 'none'; base-uri 'self';">
     <title>SEC_OPERATOR // KERNEL_BYPASS</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="tailwind.config.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              cyber: {
-                black: '#050505',
-                dark: '#080808',
-                yellow: '#FFFF00',
-                dim: 'rgba(255, 255, 0, 0.15)',
-                red: '#FF003C',
-              }
-            },
-            fontFamily: {
-              mono: ['"JetBrains Mono"', 'monospace'],
-            }
-          }
-        }
-      }
-    </script>
     <style>
       body {
         background-color: #050505;
@@ -174,7 +156,7 @@
                 <h3 class="text-[10px] font-black uppercase tracking-widest opacity-60 w-full text-left mb-4">THM_INTEL_FEED</h3>
                 <div class="relative w-full overflow-hidden flex justify-center items-center h-[180px] bg-white/5 border border-cyber-yellow/10 rounded">
                     <div class="origin-center transform scale-[0.7] md:scale-100 w-[600px] h-[300px] pointer-events-none">
-                        <iframe src="https://tryhackme.com/api/v2/badges/public-profile?userPublicId=4636470" style="border: none; width: 100%; height: 100%; mix-blend-mode: screen;" scrolling="no"></iframe>
+                        <iframe src="https://tryhackme.com/api/v2/badges/public-profile?userPublicId=4636470" style="border: none; width: 100%; height: 100%; mix-blend-mode: screen;" scrolling="no" sandbox="allow-scripts allow-same-origin"></iframe>
                     </div>
                 </div>
                 <div class="w-full mt-4 flex justify-between text-[10px] font-bold border-t border-cyber-yellow/20 pt-2">
