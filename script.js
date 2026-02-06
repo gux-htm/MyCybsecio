@@ -21,6 +21,17 @@ const PORTFOLIO_DATA = {
 };
 
 // --- BACKGROUND ENGINES ---
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), wait);
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
 class MatrixEngine {
     constructor() {
         this.canvas = document.getElementById('matrix-canvas');
@@ -30,7 +41,8 @@ class MatrixEngine {
         this.chars = '01XYZ<>[]{}@#$%&*+=_';
         this.columns = 0;
         
-        window.addEventListener('resize', () => this.init());
+        window.addEventListener('resize', debounce(() => this.init(), 250));
+        window.addEventListener('resize', debounce(() => this.init(), 200));
         this.init();
         this.draw();
     }
@@ -63,8 +75,12 @@ class PixelEngine {
         this.grid = [];
         this.cols = 0;
         this.rows = 0;
+        this.imageData = null;
+        this.buf32 = null;
+        this.isLittleEndian = true;
 
-        window.addEventListener('resize', () => this.init());
+        window.addEventListener('resize', debounce(() => this.init(), 250));
+        window.addEventListener('resize', debounce(() => this.init(), 200));
         this.init();
         this.animate();
     }
@@ -74,18 +90,46 @@ class PixelEngine {
         this.cols = Math.ceil(this.canvas.width / this.pixelSize);
         this.rows = Math.ceil(this.canvas.height / this.pixelSize);
         this.grid = new Array(this.cols * this.rows).fill(0).map(() => Math.random() > 0.9 ? 1 : 0);
+
+        this.imageData = this.ctx.createImageData(this.canvas.width, this.canvas.height);
+        this.buf32 = new Uint32Array(this.imageData.data.buffer);
+        this.isLittleEndian = new Uint8Array(new Uint32Array([0x12345678]).buffer)[0] === 0x78;
     }
     animate() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = '#FF0';
+        this.buf32.fill(0);
+
+        const width = this.canvas.width;
+        const height = this.canvas.height;
+        const drawSize = this.pixelSize - 1;
+
         for (let i = 0; i < this.cols; i++) {
             for (let j = 0; j < this.rows; j++) {
                 if (this.grid[j * this.cols + i] === 1) {
-                    this.ctx.globalAlpha = 0.05 + Math.random() * 0.1;
-                    this.ctx.fillRect(i * this.pixelSize, j * this.pixelSize, this.pixelSize - 1, this.pixelSize - 1);
+                    const x = i * this.pixelSize;
+                    const y = j * this.pixelSize;
+                    const alpha = Math.floor((0.05 + Math.random() * 0.1) * 255);
+                    let color;
+
+                    if (this.isLittleEndian) {
+                        color = 0x00FFFF | (alpha << 24);
+                    } else {
+                        color = 0xFFFF0000 | alpha;
+                    }
+
+                    for (let dy = 0; dy < drawSize; dy++) {
+                        if (y + dy >= height) continue;
+                        const rowOffset = (y + dy) * width;
+                        for (let dx = 0; dx < drawSize; dx++) {
+                            if (x + dx >= width) continue;
+                            this.buf32[rowOffset + x + dx] = color;
+                        }
+                    }
                 }
             }
         }
+
+        this.ctx.putImageData(this.imageData, 0, 0);
+
         if (Math.random() > 0.9) this.grid[Math.floor(Math.random() * this.grid.length)] = Math.random() > 0.5 ? 1 : 0;
         setTimeout(() => requestAnimationFrame(() => this.animate()), 100);
     }
@@ -104,7 +148,14 @@ async function startBootSequence() {
     for (const log of logs) {
         const div = document.createElement('div');
         div.className = "border-l-2 border-cyber-yellow pl-2 opacity-0 transition-opacity duration-300";
-        div.innerHTML = `<span class="font-bold">>></span> ${log}`;
+
+        const arrow = document.createElement('span');
+        arrow.className = "font-bold";
+        arrow.textContent = ">>";
+
+        div.appendChild(arrow);
+        div.appendChild(document.createTextNode(" " + log));
+
         logContainer.appendChild(div);
         await new Promise(r => setTimeout(r, 400));
         div.style.opacity = '1';
@@ -137,9 +188,30 @@ function renderPortfolio() {
         let skillsHtml = '';
         PORTFOLIO_DATA.skills.forEach(s => {
             const blocks = Math.floor(s.value / 5);
-            let blocksHtml = '';
+
+            const wrapper = document.createElement('div');
+            wrapper.className = "space-y-2";
+
+            const header = document.createElement('div');
+            header.className = "flex justify-between text-[10px] font-black tracking-widest uppercase";
+
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = s.name;
+
+            const valueSpan = document.createElement('span');
+            valueSpan.className = "opacity-40";
+            valueSpan.textContent = `${s.value}%`;
+
+            header.appendChild(nameSpan);
+            header.appendChild(valueSpan);
+
+            const blocksContainer = document.createElement('div');
+            blocksContainer.className = "flex gap-1 overflow-hidden";
+
             for(let i=0; i<20; i++) {
-                blocksHtml += `<div class="h-4 w-2 sm:w-3 skew-x-[-20deg] ${i < blocks ? 'bg-cyber-yellow' : 'bg-cyber-yellow/10'}"></div>`;
+                const block = document.createElement('div');
+                block.className = `h-4 w-2 sm:w-3 skew-x-[-20deg] ${i < blocks ? 'bg-cyber-yellow' : 'bg-cyber-yellow/10'}`;
+                blocksContainer.appendChild(block);
             }
             skillsHtml += `
                 <div class="space-y-2">
@@ -149,6 +221,10 @@ function renderPortfolio() {
                     </div>
                     <div class="flex gap-1 overflow-hidden">${blocksHtml}</div>
                 </div>`;
+
+            wrapper.appendChild(header);
+            wrapper.appendChild(blocksContainer);
+            skillList.appendChild(wrapper);
         });
         skillList.innerHTML = skillsHtml;
     }
@@ -169,6 +245,37 @@ function renderPortfolio() {
                     </div>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="opacity-30 group-hover:opacity-100"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="m15 3 6 6"/><path d="M10 14 21 3"/></svg>
                 </div>`;
+            const row = document.createElement('div');
+            row.className = "py-4 flex justify-between items-center group cursor-pointer hover:bg-cyber-yellow/5 px-2 transition-all";
+
+            const leftDiv = document.createElement('div');
+            leftDiv.className = "flex items-center gap-4";
+
+            const iconContainer = document.createElement('div');
+            iconContainer.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF0" stroke-width="2"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M8.21 13.89 7 23l5-3 5 3-1.21-9.12"/><path d="M15 7a6 6 0 1 0-12 0 6 6 0 0 0 12 0Z"/></svg>`;
+            leftDiv.appendChild(iconContainer.firstElementChild);
+
+            const infoDiv = document.createElement('div');
+
+            const titleDiv = document.createElement('div');
+            titleDiv.className = "text-[11px] font-black uppercase text-white";
+            titleDiv.textContent = c.title;
+
+            const issuerDiv = document.createElement('div');
+            issuerDiv.className = "text-[9px] font-mono opacity-40 uppercase";
+            issuerDiv.textContent = `${c.issuer} // ${c.year}`;
+
+            infoDiv.appendChild(titleDiv);
+            infoDiv.appendChild(issuerDiv);
+            leftDiv.appendChild(infoDiv);
+
+            const arrowContainer = document.createElement('div');
+            arrowContainer.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="opacity-30 group-hover:opacity-100"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="m15 3 6 6"/><path d="M10 14 21 3"/></svg>`;
+
+            row.appendChild(leftDiv);
+            row.appendChild(arrowContainer.firstElementChild);
+
+            certsList.appendChild(row);
         });
         certsList.innerHTML = certsHtml;
     }
@@ -188,6 +295,47 @@ function renderPortfolio() {
                     <p class="text-[10px] font-mono text-cyber-yellow/60 uppercase mb-4">${p.desc}</p>
                     <div class="text-[9px] border border-cyber-yellow/40 px-2 py-1 font-bold inline-block">${p.tech}</div>
                 </div>`;
+            const card = document.createElement('div');
+            card.className = "tactical-frame group";
+
+            // Corners
+            const corners = ['tl', 'tr', 'bl', 'br'];
+            corners.forEach(c => {
+                const corner = document.createElement('div');
+                corner.className = `${c} corner`;
+                card.appendChild(corner);
+            });
+
+            // Image Container
+            const imgContainer = document.createElement('div');
+            imgContainer.className = "aspect-video relative overflow-hidden mb-4 border border-cyber-yellow/20";
+
+            const img = document.createElement('img');
+            img.src = p.img;
+            img.className = "w-full h-full object-cover grayscale brightness-50 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700";
+            imgContainer.appendChild(img);
+
+            card.appendChild(imgContainer);
+
+            // Title
+            const h3 = document.createElement('h3');
+            h3.className = "text-md font-black uppercase text-white mb-2";
+            h3.textContent = p.title;
+            card.appendChild(h3);
+
+            // Desc
+            const pDesc = document.createElement('p');
+            pDesc.className = "text-[10px] font-mono text-cyber-yellow/60 uppercase mb-4";
+            pDesc.textContent = p.desc;
+            card.appendChild(pDesc);
+
+            // Tech
+            const techDiv = document.createElement('div');
+            techDiv.className = "text-[9px] border border-cyber-yellow/40 px-2 py-1 font-bold inline-block";
+            techDiv.textContent = p.tech;
+            card.appendChild(techDiv);
+
+            projectsList.appendChild(card);
         });
         projectsList.innerHTML = projectsHtml;
     }
